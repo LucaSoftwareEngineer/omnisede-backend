@@ -27,6 +27,11 @@ public class Repository<T> : IRepository<T> where T : class
     {
         return await _context.Set<T>().FindAsync(id);
     }
+    
+    public async Task<T?> GetByLongIdAsync(long id)
+    {
+        return await _context.Set<T>().FindAsync(id);
+    }
 
     public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
     {
