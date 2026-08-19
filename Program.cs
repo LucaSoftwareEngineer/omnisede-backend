@@ -1,8 +1,12 @@
+using OmniSedeBackend.Security;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OmniSedeBackend.Config;
 using OmniSedeBackend.Models;
 using OmniSedeBackend.Repositories.Implementations;
 using OmniSedeBackend.Repositories.Interfaces;
+using OmniSedeBackend.Services.Implementations;
+using OmniSedeBackend.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 string conn = LoadDatabase(builder.Configuration);
@@ -29,6 +33,7 @@ static void LoadConfig(IServiceCollection services, IConfiguration configuration
         jwt.Audience = Environment.ExpandEnvironmentVariables(jwt.Audience ?? string.Empty);
         jwt.SecretKey = Environment.ExpandEnvironmentVariables(jwt.SecretKey ?? string.Empty);
     });
+    services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtSettings>>().Value);
 }
 
 static void LoadRepository(IServiceCollection services)
@@ -44,9 +49,41 @@ static void LoadRepository(IServiceCollection services)
 
 static void LoadService(IServiceCollection services)
 {
+    services.AddScoped<IJwtService, JwtService>();
+    services.AddScoped<IAuthService, AuthService>();
     services.AddControllers();
     services.AddEndpointsApiExplorer();
-    services.AddSwaggerGen();
+    LoadSwagger(services);
+}
+
+static void LoadSwagger(IServiceCollection services)
+{
+    services.AddSwaggerGen(options =>
+    {
+        options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Description = "Inserisci il token nel formato: Bearer {token}"
+        });
+        options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
 }
 
 static void StartApp(WebApplication app)
@@ -58,6 +95,8 @@ static void StartApp(WebApplication app)
     }
 
     app.UseHttpsRedirection();
+    app.UseRouting();
+    app.UseJwtMiddleware();
     app.MapControllers();
 
     app.Run();
