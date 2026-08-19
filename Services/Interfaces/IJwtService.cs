@@ -5,6 +5,6 @@ namespace OmniSedeBackend.Services.Interfaces;
 
 public interface IJwtService
 {
-    string GenerateToken(Utenti utente);
+    Task<string> GenerateToken(Utenti utente);
     ClaimsPrincipal? ValidateToken(string token);
 }
