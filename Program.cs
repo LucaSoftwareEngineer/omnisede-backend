@@ -1,8 +1,12 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.EntityFrameworkCore;
+using OmniSedeBackend.Models;
+using OmniSedeBackend.Repositories.Implementations;
+using OmniSedeBackend.Repositories.Interfaces;
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+var builder = WebApplication.CreateBuilder(args);
+string conn = LoadDatabase(builder.Configuration);
+
+LoadService(builder.Services, conn);
 
 var app = builder.Build();
 
@@ -16,3 +20,29 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();
+
+static string LoadDatabase(ConfigurationManager config)
+{
+    string? connectionDbFind = config.GetConnectionString("DefaultConnection");
+    return Environment.ExpandEnvironmentVariables(connectionDbFind ?? "");
+}
+
+static void LoadService(IServiceCollection services, string conn)
+{
+    services.AddDbContext<OmnisedeContext>(options => options.UseSqlServer(conn));
+    LoadRepository(services);
+    services.AddControllers();
+    services.AddEndpointsApiExplorer();
+    services.AddSwaggerGen();
+}
+
+static void LoadRepository(IServiceCollection services)
+{
+    services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+    services.AddScoped<IAziendeRepository, AziendeRepository>();
+    services.AddScoped<IUtentiRepository, UtentiRepository>();
+    services.AddScoped<IDocumentiRepository, DocumentiRepository>();
+    services.AddScoped<IRuoliRepository, RuoliRepository>();
+    services.AddScoped<ISedeRepository, SedeRepository>();
+    services.AddScoped<IUnitOfWork, UnitOfWork>();
+}
