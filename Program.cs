@@ -26,6 +26,7 @@ static string LoadDatabase(ConfigurationManager config)
 static void LoadConfig(IServiceCollection services, IConfiguration configuration, string conn)
 {
     services.AddDbContext<OmnisedeContext>(options => options.UseSqlServer(conn));
+    
     services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
     services.PostConfigure<JwtSettings>(jwt =>
     {
@@ -34,6 +35,14 @@ static void LoadConfig(IServiceCollection services, IConfiguration configuration
         jwt.SecretKey = Environment.ExpandEnvironmentVariables(jwt.SecretKey ?? string.Empty);
     });
     services.AddSingleton(sp => sp.GetRequiredService<IOptions<JwtSettings>>().Value);
+    
+    services.Configure<BlobConfig>(configuration.GetSection("Blob"));
+    services.PostConfigure<BlobConfig>(blobConfig =>
+    {
+        blobConfig.BlobConn = Environment.ExpandEnvironmentVariables(blobConfig.BlobConn ?? string.Empty);
+        blobConfig.BlobContainer = Environment.ExpandEnvironmentVariables(blobConfig.BlobContainer ?? string.Empty);
+    });
+    services.AddSingleton(sp => sp.GetRequiredService<IOptions<BlobConfig>>().Value);
 }
 
 static void LoadRepository(IServiceCollection services)
@@ -51,6 +60,7 @@ static void LoadService(IServiceCollection services)
 {
     services.AddScoped<IJwtService, JwtService>();
     services.AddScoped<IAuthService, AuthService>();
+    services.AddScoped<IUploaderService, UploaderService>();
     services.AddControllers();
     services.AddEndpointsApiExplorer();
     LoadSwagger(services);
