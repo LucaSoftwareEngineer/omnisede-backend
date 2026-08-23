@@ -21,5 +21,11 @@ public class DocumentiController : ControllerBase
     {
         return await _documentiService.Create(request);
     }
+
+    [HttpPost("/approve")]
+    public async Task<ActionResult<DocumentiResponse>> Approve([FromBody] DocumentApprovaRequest request)
+    {
+        return await _documentiService.Approve(request);
+    }
     
 }

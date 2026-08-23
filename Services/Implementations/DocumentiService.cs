@@ -43,8 +43,26 @@ public class DocumentiService : IDocumentiService
         return docRes;
     }
 
-    public Task<DocumentiResponse> Approve(DocumentApprovaRequest request)
+    public async Task<DocumentiResponse> Approve(DocumentApprovaRequest request)
     {
-        throw new NotImplementedException();
+        Documenti? documenti = await _unitOfWork.Documenti.GetByLongIdAsync(request.Id);
+
+        if (documenti == null) throw new OmniSedeException("Documento non trovato");
+
+        documenti.ApprovatoDa = request.ApprovatoDa;
+        documenti.Descrizione = request.Descrizione;
+        documenti.DataApprovazione = DateTime.Now;
+        documenti.DataModifica = DateTime.Now;
+
+        await _unitOfWork.CompleteAsync();
+
+        Sede? sede = await _unitOfWork.Sedi.GetByLongIdAsync(documenti.SedeId.Value);
+        if (sede == null) throw new OmniSedeException("Sede non trovata");
+
+        SedeResponse sedeRes = _mapper.Map<SedeResponse>(sede);
+        DocumentiResponse docRes = _mapper.Map<DocumentiResponse>(documenti);
+        docRes.Sede = sedeRes;
+
+        return docRes;
     }
 }
