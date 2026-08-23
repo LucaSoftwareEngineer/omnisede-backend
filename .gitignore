@@ -12,3 +12,5 @@ appsettings.Local.json
 *.log
 .crash
 Properties/
+Controllers/UploaderTestController.cs
+Dto/Request/UploadTest.cs
