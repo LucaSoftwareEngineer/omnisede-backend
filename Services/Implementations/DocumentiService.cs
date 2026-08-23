@@ -32,6 +32,7 @@ public class DocumentiService : IDocumentiService
 
         Documenti documenti = _mapper.Map<Documenti>(request);
         documenti.NomeFile = request.DocumentoFile.FileName;
+        documenti.DataCaricamento = DateTime.Now;
 
         await _unitOfWork.Documenti.AddAsync(documenti);
         await _unitOfWork.CompleteAsync();
