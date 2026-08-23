@@ -9,6 +9,7 @@ using OmniSedeBackend.Repositories.Implementations;
 using OmniSedeBackend.Repositories.Interfaces;
 using OmniSedeBackend.Services.Implementations;
 using OmniSedeBackend.Services.Interfaces;
+using Org.BouncyCastle.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 string conn = LoadDatabase(builder.Configuration);
@@ -46,6 +47,17 @@ static void LoadConfig(IServiceCollection services, IConfiguration configuration
         blobConfig.BlobContainer = Environment.ExpandEnvironmentVariables(blobConfig.BlobContainer ?? string.Empty);
     });
     services.AddSingleton(sp => sp.GetRequiredService<IOptions<BlobConfig>>().Value);
+
+    services.Configure<SmtpConfig>(configuration.GetSection("Smtp"));
+    services.PostConfigure<SmtpConfig>(smtpConfig =>
+    {
+        smtpConfig.Host = Environment.ExpandEnvironmentVariables(smtpConfig.Host ?? string.Empty);
+        smtpConfig.Port = Environment.ExpandEnvironmentVariables(smtpConfig.Port ?? string.Empty);
+        smtpConfig.NameSender = Environment.ExpandEnvironmentVariables(smtpConfig.NameSender ?? string.Empty);
+        smtpConfig.MailSender = Environment.ExpandEnvironmentVariables(smtpConfig.MailSender ?? string.Empty);
+        smtpConfig.MailToken = Environment.ExpandEnvironmentVariables(smtpConfig.MailToken ?? string.Empty);
+    });
+    services.AddScoped(sp => sp.GetRequiredService<IOptions<SmtpConfig>>().Value);
 }
 
 static void LoadRepository(IServiceCollection services)
@@ -62,6 +74,7 @@ static void LoadRepository(IServiceCollection services)
 static void LoadService(IServiceCollection services)
 {
     services.AddScoped<IJwtService, JwtService>();
+    services.AddTransient<IEmailService, EmailService>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<IUploaderService, UploaderService>();
     services.AddScoped<IDocumentiService, DocumentiService>();
