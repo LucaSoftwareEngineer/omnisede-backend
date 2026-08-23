@@ -1,6 +1,6 @@
 namespace OmniSedeBackend.Dto.Response;
 
-public class DocumentCreateResponse
+public class DocumentiResponse
 {
     public long Id { get; set; }
 
