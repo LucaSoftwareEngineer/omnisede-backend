@@ -12,4 +12,7 @@ public class DocumentCreateRequest
 
     [Required(ErrorMessage = "Non è stata specificata la sede a cui deve essere associato il documento")]
     public long SedeId { get; set; }
+
+    [Required(ErrorMessage = "Non è stato caricato il documento")]
+    public IFormFile DocumentoFile { get; set; }
 }
