@@ -1,3 +1,5 @@
+using Mapster;
+using MapsterMapper;
 using OmniSedeBackend.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -12,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 string conn = LoadDatabase(builder.Configuration);
 
 LoadConfig(builder.Services, builder.Configuration, conn);
+loadMapper(builder.Services);
 LoadRepository(builder.Services);
 LoadService(builder.Services);
 
@@ -61,6 +64,7 @@ static void LoadService(IServiceCollection services)
     services.AddScoped<IJwtService, JwtService>();
     services.AddScoped<IAuthService, AuthService>();
     services.AddScoped<IUploaderService, UploaderService>();
+    services.AddScoped<IDocumentiService, DocumentiService>();
     services.AddControllers();
     services.AddEndpointsApiExplorer();
     LoadSwagger(services);
@@ -94,6 +98,13 @@ static void LoadSwagger(IServiceCollection services)
             }
         });
     });
+}
+
+static void loadMapper(IServiceCollection services)
+{
+    var config = TypeAdapterConfig.GlobalSettings;
+    services.AddSingleton(config);
+    services.AddScoped<IMapper, ServiceMapper>();
 }
 
 static void StartApp(WebApplication app)
