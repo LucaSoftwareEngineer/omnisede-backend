@@ -1,4 +1,5 @@
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using OmniSedeBackend.Config;
 using OmniSedeBackend.Services.Interfaces;
 
@@ -18,6 +19,12 @@ public class UploaderService : IUploaderService
         var options = new BlobClientOptions(BlobClientOptions.ServiceVersion.V2023_11_03);
         var client = new BlobContainerClient(_blobConfig.BlobConn, _blobConfig.BlobContainer, options);
         var blob = client.GetBlobClient(file.FileName);
-        await blob.UploadAsync(file.OpenReadStream());
+
+        var uploadOptions = new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders { ContentType = file.ContentType }
+        };
+
+        await blob.UploadAsync(file.OpenReadStream(), uploadOptions);
     }
 }
