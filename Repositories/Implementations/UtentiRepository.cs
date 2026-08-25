@@ -13,4 +13,10 @@ public class UtentiRepository : Repository<Utenti>, IUtentiRepository
         Utenti? utenti = await _context.Utentis.Where(u => u.Email == email).FirstOrDefaultAsync();
         return utenti;
     }
+
+    public async Task<List<Utenti>> GetBySedeAndRuolo(long idSede, long idRuolo)
+    {
+        List<Utenti> utenti = await _context.Utentis.Where(u => u.SedeId == idSede && u.RuoloId == idRuolo).ToListAsync();
+        return utenti;
+    }
 }

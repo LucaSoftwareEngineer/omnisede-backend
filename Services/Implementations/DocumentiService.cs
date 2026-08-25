@@ -3,9 +3,9 @@ using OmniSedeBackend.Dto.Request;
 using OmniSedeBackend.Dto.Response;
 using OmniSedeBackend.Exceptions;
 using OmniSedeBackend.Models;
-using OmniSedeBackend.Repositories.Implementations;
 using OmniSedeBackend.Repositories.Interfaces;
 using OmniSedeBackend.Services.Interfaces;
+using OmniSedeBackend.Utils;
 
 namespace OmniSedeBackend.Services.Implementations;
 
@@ -14,17 +14,18 @@ public class DocumentiService : IDocumentiService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IUploaderService _uploaderService;
+    private readonly IEmailService _emailService;
 
-    public DocumentiService(IUnitOfWork unitOfWork, IMapper mapper, IUploaderService uploaderService)
+    public DocumentiService(IUnitOfWork unitOfWork, IMapper mapper, IUploaderService uploaderService, IEmailService emailService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _uploaderService = uploaderService;
+        _emailService = emailService;
     }
 
     public async Task<DocumentiResponse> Create(DocumentCreateRequest request)
     {
-
         Sede? sede = await _unitOfWork.Sedi.GetByLongIdAsync(request.SedeId);
         if (sede == null) throw new OmniSedeException("Sede non trovata");
 
@@ -40,6 +41,9 @@ public class DocumentiService : IDocumentiService
         SedeResponse sedeRes = _mapper.Map<SedeResponse>(sede);
         DocumentiResponse docRes = _mapper.Map<DocumentiResponse>(documenti);
         docRes.Sede = sedeRes;
+
+        List<Utenti> amministratori = await _unitOfWork.Utenti.GetBySedeAndRuolo(sede.Id, 1L);
+        NotifyAmministratori(amministratori);
 
         return docRes;
     }
@@ -64,6 +68,23 @@ public class DocumentiService : IDocumentiService
         DocumentiResponse docRes = _mapper.Map<DocumentiResponse>(documenti);
         docRes.Sede = sedeRes;
 
+        Utenti utente = await _unitOfWork.Utenti.GetByLongIdAsync(documenti.CaricatoDa.Value);
+        _emailService.SendEmail(utente.Email, "Documento Approvato", MailTemplate.DocumentoApprovato);   
+
         return docRes;
+    }
+
+    public void NotifyAmministratori(List<Utenti> amministratori)
+    {
+        if (amministratori != null)
+        {
+            amministratori.ForEach(a =>
+            {
+                if (a.Email != null)
+                {
+                    _emailService.SendEmail(a.Email, "Nuovo Documento da Approvare", MailTemplate.NuovoDocumentoDaValidare);   
+                }
+            });
+        }
     }
 }
